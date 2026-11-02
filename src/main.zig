@@ -56,7 +56,9 @@ pub fn main() !void {
         // ---------- ImGui 内容 ----------
 
         // 内置 Demo 窗口 (需要传入 ?*bool)
-        zgui.showDemoWindow(&show_demo_window);
+        if (show_demo_window) {
+            zgui.showDemoWindow(&show_demo_window);
+        }
 
         // 自定义窗口：颜色选择器
         zgui.setNextWindowPos(.{ .x = 20, .y = 20, .cond = .once });
@@ -71,9 +73,7 @@ pub fn main() !void {
 
             _ = zgui.colorEdit3("Clear Color", .{ .col = &clear_color });
 
-            if (zgui.button("Close Demo Window", .{})) {
-                show_demo_window = false;
-            }
+            _ = zgui.checkbox("Show Demo Window", .{ .v = &show_demo_window });
         }
         zgui.end();
         // --------------------------------
