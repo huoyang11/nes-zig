@@ -103,8 +103,7 @@ pub fn main() !void {
     const io = threaded.io();
 
     var cartridge = try core.card.create(allocator, io, "res/maliao.nes");
-
-    std.debug.print("{}\n", .{cartridge.header});
-
     defer cartridge.destroy();
+
+    std.debug.print("{any}\n", .{cartridge.header});
 }

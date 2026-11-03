@@ -62,8 +62,13 @@ pub const card = struct {
             .allocator = allocator,
         };
 
-        if (ret.content.len < @sizeOf(card_header)) return error.InvalidHeader;
+        if (ret.content.len < @sizeOf(card_header))
+            return error.InvalidHeader;
+
         @memcpy(std.mem.asBytes(&ret.header), ret.content[0..@sizeOf(card_header)]);
+        //校验模数
+        if (!std.mem.eql(u8, &ret.header.signature, &signature))
+            return error.InvalidHeader;
 
         return ret;
     }
