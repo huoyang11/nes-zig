@@ -3,7 +3,9 @@ const glfw = @import("zglfw");
 const gl = @import("zopengl");
 const zgui = @import("zgui");
 
-pub fn main() !void {
+const core = @import("core/root.zig");
+
+pub fn main11() !void {
     // 1. 初始化 GLFW
     try glfw.init();
     defer glfw.terminate();
@@ -89,4 +91,20 @@ pub fn main() !void {
         // 9. 交换缓冲
         window.swapBuffers();
     }
+}
+
+pub fn main() !void {
+    var gpa = std.heap.DebugAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    var threaded = std.Io.Threaded.init(allocator, .{});
+    defer threaded.deinit();
+    const io = threaded.io();
+
+    var cartridge = try core.card.create(allocator, io, "res/maliao.nes");
+
+    std.debug.print("{}\n", .{cartridge.header});
+
+    defer cartridge.destroy();
 }
