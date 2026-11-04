@@ -105,5 +105,18 @@ pub fn main() !void {
     var cartridge = try core.card.create(allocator, io, "res/maliao.nes");
     defer cartridge.destroy();
 
-    std.debug.print("{any}\n", .{cartridge.header});
+    std.debug.print("header = {any}\n", .{cartridge.header});
+    std.debug.print("four_screens_mirror = {any}\n", .{cartridge.four_screens_mirror});
+    std.debug.print("has_playchoice_10 = {any}\n", .{cartridge.has_playchoice_10});
+    std.debug.print("has_trainer = {any}\n", .{cartridge.has_trainer});
+    std.debug.print("has_vs_unisystem = {any}\n", .{cartridge.has_vs_unisystem});
+    std.debug.print("has_wram = {any}\n", .{cartridge.has_wram});
+    std.debug.print("isnes2 = {any}\n", .{cartridge.isnes2});
+    std.debug.print("mirror_type = {any}\n", .{cartridge.mirror_type});
+    std.debug.print("mapperid = {any}\n", .{cartridge.mapperid});
+
+    std.debug.print("content_len = {any}\n", .{cartridge.content.len});
+    std.debug.print("trainer_range = {any}\n", .{cartridge.trainer_range});
+    std.debug.print("prg_rom_range = {any}\n", .{cartridge.prg_rom_range});
+    std.debug.print("chr_rom_range = {any}\n", .{cartridge.chr_rom_range});
 }
