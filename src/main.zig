@@ -53,7 +53,7 @@ pub fn main() !void {
     var cartridge = try core.card.create(allocator, io, "res/maliao.nes");
     defer cartridge.destroy();
 
-    const image_pixels = try cartridge.testparseimage(0);
+    const image_pixels = try cartridge.testparseimage();
     defer allocator.free(image_pixels);
 
     // Upload the RGB image once; ImGui uses the OpenGL texture handle.
@@ -65,22 +65,7 @@ pub fn main() !void {
     gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MAG_FILTER, gl_binding.NEAREST);
     gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_S, gl_binding.CLAMP_TO_EDGE);
     gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_T, gl_binding.CLAMP_TO_EDGE);
-    gl_binding.texImage2D(gl_binding.TEXTURE_2D, 0, gl_binding.RGB8, 256, 240, 0, gl_binding.RGB, gl_binding.UNSIGNED_BYTE, image_pixels.ptr);
-    gl_binding.bindTexture(gl_binding.TEXTURE_2D, 0);
-
-    const image_pixels1 = try cartridge.testparseimage(1);
-    defer allocator.free(image_pixels1);
-
-    // Upload the RGB image once; ImGui uses the OpenGL texture handle.
-    var image_texture1: gl_binding.Uint = 0;
-    gl_binding.genTextures(1, &image_texture1);
-    defer gl_binding.deleteTextures(1, &image_texture1);
-    gl_binding.bindTexture(gl_binding.TEXTURE_2D, image_texture1);
-    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MIN_FILTER, gl_binding.NEAREST);
-    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MAG_FILTER, gl_binding.NEAREST);
-    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_S, gl_binding.CLAMP_TO_EDGE);
-    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_T, gl_binding.CLAMP_TO_EDGE);
-    gl_binding.texImage2D(gl_binding.TEXTURE_2D, 0, gl_binding.RGB8, 256, 240, 0, gl_binding.RGB, gl_binding.UNSIGNED_BYTE, image_pixels1.ptr);
+    gl_binding.texImage2D(gl_binding.TEXTURE_2D, 0, gl_binding.RGB8, 256, 128, 0, gl_binding.RGB, gl_binding.UNSIGNED_BYTE, image_pixels.ptr);
     gl_binding.bindTexture(gl_binding.TEXTURE_2D, 0);
 
     while (!window.shouldClose()) {
@@ -117,21 +102,12 @@ pub fn main() !void {
             _ = zgui.checkbox("Show Demo Window", .{ .v = &show_demo_window });
         }
         zgui.end();
-        zgui.setNextWindowSize(.{ .w = 540, .h = 530, .cond = .once });
+        zgui.setNextWindowSize(.{ .w = 570, .h = 300, .cond = .once });
         if (zgui.begin("CHR Image", .{})) {
             zgui.image(.{
                 .tex_data = null,
                 .tex_id = @enumFromInt(image_texture),
-            }, .{ .w = 512, .h = 480 });
-        }
-        zgui.end();
-
-        zgui.setNextWindowSize(.{ .w = 540, .h = 530, .cond = .once });
-        if (zgui.begin("CHR Image1", .{})) {
-            zgui.image(.{
-                .tex_data = null,
-                .tex_id = @enumFromInt(image_texture1),
-            }, .{ .w = 512, .h = 480 });
+            }, .{ .w = 512, .h = 256 });
         }
         zgui.end();
         // --------------------------------

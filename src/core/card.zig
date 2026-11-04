@@ -102,20 +102,23 @@ pub const card = struct {
     }
 
     // Returns an owned 256 x 240 RGB image of the first CHR pattern table.
-    pub fn testparseimage(self: *card, start: u32) ![]u8 {
+    pub fn testparseimage(self: *card) ![]u8 {
         if (self.chr_rom_range.end > self.content.len or
             self.chr_rom_range.end - self.chr_rom_range.start < 0x1000)
             return error.InvalidChrRom;
 
-        const ret = try self.allocator.alloc(u8, 32 * 30 * 8 * 8 * 3);
+        const count = 0x2000 / 16;
+        const tile_size = 8 * 8;
+
+        const ret = try self.allocator.alloc(u8, count * tile_size * 3);
         @memset(ret, 0);
 
         var i: u32 = 0;
-        while (i < 0x1000) : (i += 16) {
+        while (i < 0x2000) : (i += 16) {
             var j: u32 = 0;
             while (j < 8) : (j += 1) {
-                const tile_1 = self.content[self.chr_rom_range.start + i + j + start * 0x1000];
-                const tile_2 = self.content[self.chr_rom_range.start + i + j + 8 + start * 0x1000];
+                const tile_1 = self.content[self.chr_rom_range.start + i + j];
+                const tile_2 = self.content[self.chr_rom_range.start + i + j + 8];
 
                 var k: u32 = 0;
                 while (k < 8) : (k += 1) {
