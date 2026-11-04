@@ -5,7 +5,7 @@ const zgui = @import("zgui");
 
 const core = @import("core/root.zig");
 
-pub fn main11() !void {
+pub fn main() !void {
     // 1. 初始化 GLFW
     try glfw.init();
     defer glfw.terminate();
@@ -31,7 +31,9 @@ pub fn main11() !void {
     gl.loadCoreProfile(glfw.getProcAddress, 3, 3) catch @panic("failed to load OpenGL");
 
     // 4. 初始化 zgui (Dear ImGui)
-    const allocator = std.heap.c_allocator;
+    var gpa = std.heap.DebugAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
     zgui.init(allocator);
     defer zgui.deinit();
 
@@ -43,6 +45,43 @@ pub fn main11() !void {
     // 6. 主循环
     var clear_color = [3]f32{ 0.15, 0.20, 0.30 }; // RGB，跨帧保留颜色选择
     var show_demo_window = true;
+
+    var threaded = std.Io.Threaded.init(allocator, .{});
+    defer threaded.deinit();
+    const io = threaded.io();
+
+    var cartridge = try core.card.create(allocator, io, "res/maliao.nes");
+    defer cartridge.destroy();
+
+    const image_pixels = try cartridge.testparseimage(0);
+    defer allocator.free(image_pixels);
+
+    // Upload the RGB image once; ImGui uses the OpenGL texture handle.
+    var image_texture: gl_binding.Uint = 0;
+    gl_binding.genTextures(1, &image_texture);
+    defer gl_binding.deleteTextures(1, &image_texture);
+    gl_binding.bindTexture(gl_binding.TEXTURE_2D, image_texture);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MIN_FILTER, gl_binding.NEAREST);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MAG_FILTER, gl_binding.NEAREST);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_S, gl_binding.CLAMP_TO_EDGE);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_T, gl_binding.CLAMP_TO_EDGE);
+    gl_binding.texImage2D(gl_binding.TEXTURE_2D, 0, gl_binding.RGB8, 256, 240, 0, gl_binding.RGB, gl_binding.UNSIGNED_BYTE, image_pixels.ptr);
+    gl_binding.bindTexture(gl_binding.TEXTURE_2D, 0);
+
+    const image_pixels1 = try cartridge.testparseimage(1);
+    defer allocator.free(image_pixels1);
+
+    // Upload the RGB image once; ImGui uses the OpenGL texture handle.
+    var image_texture1: gl_binding.Uint = 0;
+    gl_binding.genTextures(1, &image_texture1);
+    defer gl_binding.deleteTextures(1, &image_texture1);
+    gl_binding.bindTexture(gl_binding.TEXTURE_2D, image_texture1);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MIN_FILTER, gl_binding.NEAREST);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_MAG_FILTER, gl_binding.NEAREST);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_S, gl_binding.CLAMP_TO_EDGE);
+    gl_binding.texParameteri(gl_binding.TEXTURE_2D, gl_binding.TEXTURE_WRAP_T, gl_binding.CLAMP_TO_EDGE);
+    gl_binding.texImage2D(gl_binding.TEXTURE_2D, 0, gl_binding.RGB8, 256, 240, 0, gl_binding.RGB, gl_binding.UNSIGNED_BYTE, image_pixels1.ptr);
+    gl_binding.bindTexture(gl_binding.TEXTURE_2D, 0);
 
     while (!window.shouldClose()) {
         glfw.pollEvents();
@@ -70,12 +109,29 @@ pub fn main11() !void {
             zgui.text("Hello from Zig + Dear ImGui + OpenGL3", .{});
 
             // 获取 FPS (注意 io 的访问方式)
-            const io = zgui.io;
-            zgui.text("FPS: {d:.1}", .{io.getFramerate()});
+            const zuio = zgui.io;
+            zgui.text("FPS: {d:.1}", .{zuio.getFramerate()});
 
             _ = zgui.colorEdit3("Clear Color", .{ .col = &clear_color });
 
             _ = zgui.checkbox("Show Demo Window", .{ .v = &show_demo_window });
+        }
+        zgui.end();
+        zgui.setNextWindowSize(.{ .w = 540, .h = 530, .cond = .once });
+        if (zgui.begin("CHR Image", .{})) {
+            zgui.image(.{
+                .tex_data = null,
+                .tex_id = @enumFromInt(image_texture),
+            }, .{ .w = 512, .h = 480 });
+        }
+        zgui.end();
+
+        zgui.setNextWindowSize(.{ .w = 540, .h = 530, .cond = .once });
+        if (zgui.begin("CHR Image1", .{})) {
+            zgui.image(.{
+                .tex_data = null,
+                .tex_id = @enumFromInt(image_texture1),
+            }, .{ .w = 512, .h = 480 });
         }
         zgui.end();
         // --------------------------------
@@ -93,7 +149,7 @@ pub fn main11() !void {
     }
 }
 
-pub fn main() !void {
+pub fn main33() !void {
     var gpa = std.heap.DebugAllocator(.{}){};
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();

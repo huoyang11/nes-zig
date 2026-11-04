@@ -1,4 +1,5 @@
 const std = @import("std");
+const colordef = @import("constdef.zig");
 
 const prg_rom_page_size: u16 = 0x4000; //16k
 const chr_rom_page_size: u16 = 0x2000; //8k
@@ -96,6 +97,46 @@ pub const card = struct {
 
         ret.prg_rom_range.init(prg_rom_offset, prg_rom_size);
         ret.chr_rom_range.init(prg_rom_offset + prg_rom_size, chr_rom_size);
+
+        return ret;
+    }
+
+    // Returns an owned 256 x 240 RGB image of the first CHR pattern table.
+    pub fn testparseimage(self: *card, start: u32) ![]u8 {
+        if (self.chr_rom_range.end > self.content.len or
+            self.chr_rom_range.end - self.chr_rom_range.start < 0x1000)
+            return error.InvalidChrRom;
+
+        const ret = try self.allocator.alloc(u8, 32 * 30 * 8 * 8 * 3);
+        @memset(ret, 0);
+
+        var i: u32 = 0;
+        while (i < 0x1000) : (i += 16) {
+            var j: u32 = 0;
+            while (j < 8) : (j += 1) {
+                const tile_1 = self.content[self.chr_rom_range.start + i + j + start * 0x1000];
+                const tile_2 = self.content[self.chr_rom_range.start + i + j + 8 + start * 0x1000];
+
+                var k: u32 = 0;
+                while (k < 8) : (k += 1) {
+                    const backpack_index: usize = 1;
+                    const shift: u3 = @intCast(7 - k);
+                    const color_index = (backpack_index << 2) |
+                        (@as(usize, (tile_2 >> shift) & 1) << 1) |
+                        @as(usize, (tile_1 >> shift) & 1);
+
+                    const color = colordef.system_color[color_index];
+                    const tile_index = i / 16;
+                    const row = tile_index / 32;
+                    const col = tile_index % 32;
+
+                    const content_index = ((row * 8 + j) * 256 + col * 8 + k) * 3;
+                    ret[content_index] = color[0];
+                    ret[content_index + 1] = color[1];
+                    ret[content_index + 2] = color[2];
+                }
+            }
+        }
 
         return ret;
     }
